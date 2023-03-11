@@ -4,8 +4,10 @@ declare global {
     }
 }
 
+
 function browserSolidityCompiler() {
     const ctx: Worker = self as any;
+    const importVersions: any[] = [];
 
     ctx.addEventListener('message', ({ data }) => {
         if (data === 'fetch-compiler-versions') {
@@ -15,11 +17,13 @@ function browserSolidityCompiler() {
             })
         } else {
             // version find in https://github.com/ethereum/solc-bin/tree/gh-pages/bin
-            console.log(data.version);
             importScripts(data.version);
             const soljson = ctx.Module;
 
             if ('_solidity_compile' in soljson) {
+                if (!importVersions.includes(data.version)) {
+                    importVersions.push(data.version);
+                }
                 const compile = soljson.cwrap('solidity_compile', 'string', ['string', 'number']);
                 const output = JSON.parse(compile(data.input))
                 // @ts-ignore    

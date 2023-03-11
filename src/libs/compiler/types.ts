@@ -1,3 +1,5 @@
+import { MarkerSeverity } from "monaco-editor"
+
 export interface CompilerInput {
     // Required: Source code language. Currently supported are "Solidity" and "Yul".
   language: Language,
@@ -514,3 +516,20 @@ export interface BytecodeObject {
   export interface EsWebWorkerHandlerInterface {
     getWorker(): Worker
   }
+
+
+  export type ErrorMarker = {
+    message: string
+    severity: MarkerSeverity
+    position: {
+        start: {
+            line: number
+            column: number
+        },
+        end: {
+            line: number
+            column: number
+        }
+    },
+    file: string
+}

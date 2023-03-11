@@ -24,10 +24,8 @@ class CodeParserCompiler {
         this.parseVersion = parseVersion;
     }
 
-    compile(version: string) {
+    compile() {
         const currentModel = this.editorState.models![this.editorState.modelIndex!];
-        const { compilerInfo } = this.editorState;
-        // console.log(currentModel);
 
         const codeVersion = this.parseVersion.resolveCodeVersion(currentModel.model.getValue());
         const versionUrl = this.parseVersion.getVersionUri(codeVersion);
@@ -44,13 +42,12 @@ class CodeParserCompiler {
             runs: 200,
             language: 'Solidity' as Language,
         })
-        // console.log(this.resolveImports(currentModel));
-        solidityCompiler({
+
+        // TODO: 考虑部分采用WebAssembly
+        return solidityCompiler({
             version: `https://binaries.soliditylang.org/bin/${versionUrl}`,
             input: compilerConfig,
-        }).then((result: any) => {
-            console.log(result);
-        })
+        });
     }
 
 
@@ -90,12 +87,6 @@ class CodeParserCompiler {
         return sources;
     }
 
-    resolveVersion(code: string) {
-        const { compilerInfo } = this.editorState;
-        const {releases} = compilerInfo;
-
-        
-    }
 }
 
 export default CodeParserCompiler;

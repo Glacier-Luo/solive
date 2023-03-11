@@ -2,15 +2,16 @@ import React, { useEffect, useMemo, useReducer, useRef } from "react";
 import monacoForTypes, { editor } from "monaco-editor";
 import { BaseMonacoEditor, ModelType } from "../types/monaco";
 import { getCompilerVersions } from "../libs/browser-solc";
+import CodeParser from "./codeParser";
 
 export interface EditorInitState {
-  editor: editor.IStandaloneCodeEditor | undefined,
-  monaco: typeof monacoForTypes | undefined,
-  models: ModelType[] | undefined,
-  modelIndex: number | undefined,
-  consoleMessages: any[],
-  compilerInfo: any,
-  compilerLoading: boolean,
+  editor: editor.IStandaloneCodeEditor | undefined;
+  monaco: typeof monacoForTypes | undefined;
+  models: ModelType[] | undefined;
+  modelIndex: number | undefined;
+  consoleMessages: any[];
+  codeParser: CodeParser;
+  codeParserInitLoading: boolean;
 }
 
 export interface EditorReducerActionType {
@@ -19,8 +20,8 @@ export interface EditorReducerActionType {
   "updateModels" |
   "updateModelIndex" |
   "updateConsoleMessages" |
-  "setCompilerInfo" |
-  "updateCompilerLoading";
+  "setCodeParser" |
+  "updateCodeParserLoading";
   payload: Partial<EditorInitState>;
 }
 
@@ -30,8 +31,8 @@ export type EditorReducerAction = {
   updateModels: (m: ModelType[]) => void;
   updateModelIndex: (m: number) => void;
   updateConsoleMessages: (m: any[]) => void;
-  setCompilerInfo: (m: any) => void;
-  updateCompilerLoading: (m: boolean) => void;
+  setCodeParser: (m: any) => void;
+  updateCodeParserLoading: (m: boolean) => void;
   cleanConsoleMessages: () => void;
   cleanModels: () => void;
 }
@@ -52,8 +53,8 @@ const editorInitState: EditorInitState = {
   models: [],
   modelIndex: 0,
   consoleMessages: [],
-  compilerInfo: {},
-  compilerLoading: false,
+  codeParser: {} as CodeParser,
+  codeParserInitLoading: false,
 }
 
 const editorReducer = (state: EditorInitState, action: EditorReducerActionType): EditorInitState => {
@@ -68,10 +69,10 @@ const editorReducer = (state: EditorInitState, action: EditorReducerActionType):
       return { ...state, modelIndex: action.payload.modelIndex }
     case "updateConsoleMessages":
       return { ...state, consoleMessages: action.payload.consoleMessages || [] }
-    case "setCompilerInfo":
-      return { ...state, compilerInfo: action.payload.compilerInfo || [] }
-    case "updateCompilerLoading":
-      return { ...state, compilerLoading: action.payload.compilerLoading || false }
+    case "setCodeParser":
+      return { ...state, codeParser: action.payload.codeParser || {} as CodeParser }
+    case "updateCodeParserLoading":
+      return { ...state, codeParserInitLoading: action.payload.codeParserInitLoading || false }
     default:
       return state;
   }
@@ -90,27 +91,11 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
       updateModels: (models: ModelType[]) => dispatch({ type: "updateModels", payload: { models } }),
       updateModelIndex: (modelIndex: number) => dispatch({ type: "updateModelIndex", payload: { modelIndex } }),
       updateConsoleMessages: (consoleMessages: any[]) => dispatch({ type: "updateConsoleMessages", payload: { consoleMessages } }),
-      setCompilerInfo: (compilerInfo: any) => dispatch({ type: "setCompilerInfo", payload: { compilerInfo } }),
-      updateCompilerLoading: (compilerLoading: boolean) => dispatch({ type: "updateCompilerLoading", payload: { compilerLoading } }),
+      setCodeParser: (codeParser: CodeParser) => dispatch({ type: "setCodeParser", payload: { codeParser } }),
+      updateCodeParserLoading: (codeParserInitLoading: boolean) => dispatch({ type: "updateCodeParserLoading", payload: { codeParserInitLoading } }),
       cleanModels: () => dispatch({ type: "updateModels", payload: { models: [] } }),
       cleanConsoleMessages: () => dispatch({ type: "updateConsoleMessages", payload: { consoleMessages: [] } }),
     }
-  }, [])
-
-  useEffect(() => {
-    (async () => {
-      actions.updateCompilerLoading(true);
-      try {
-        const compilerInfo = await getCompilerVersions();
-        console.log(compilerInfo);
-        
-        actions.setCompilerInfo(compilerInfo);
-      } catch (e) {
-        // @ts-ignore
-        console.error(e.message);
-      }
-      actions.updateCompilerLoading(false);
-    })()
   }, [])
 
   useEffect(() => {

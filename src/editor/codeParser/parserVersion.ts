@@ -22,6 +22,10 @@ class ParserVersion {
         this.editorState = editorState;
     }
 
+    async init() {
+        // TODO: 考虑加载失败的问题
+        await this.getCompilerInfo();
+    }
 
     resolveCodeVersion(code: string) {
         const pattern = /pragma solidity\s+(\^|~)?(\d+\.\d+\.\d+)/;
@@ -38,7 +42,7 @@ class ParserVersion {
     }
 
     matchVersion(version: string) {
-        const latestVersion = semver.maxSatisfying(Object.keys(this.allVersions), version);
+        const latestVersion = semver.maxSatisfying(this.allVersions, version);
 
         if (!latestVersion) {
             throw new Error("No suitable version was found.");
@@ -48,18 +52,19 @@ class ParserVersion {
     }
 
     async getCompilerInfo() {
-        const { value: curCompilerInfo, expired } = getCache<CompilerInfo>(COMPILER_INFO_KEY);
+        const { value: oldCompilerInfo, expired } = getCache<CompilerInfo>(COMPILER_INFO_KEY);
+        let curCompiler = oldCompilerInfo as CompilerInfo;
 
-        if (!curCompilerInfo || expired) {
-            const compilerInfo = await getCompilerVersions() as CompilerInfo;
-            this.compilerInfo = compilerInfo;
-            this.allVersions = Object.keys(compilerInfo.releases);
-            this.latestVersion = compilerInfo.latestRelease;
-            cache(COMPILER_INFO_KEY, compilerInfo, { cacheTime: 1000 * 60 * 60 * 24 });
-            return compilerInfo;
+        if (!oldCompilerInfo || expired) {
+            curCompiler = await getCompilerVersions() as CompilerInfo;
+            cache(COMPILER_INFO_KEY, curCompiler, { cacheTime: 1000 * 60 * 60 * 24 });
         }
 
-        return curCompilerInfo;
+        this.compilerInfo = curCompiler;
+        this.allVersions = Object.keys(curCompiler.releases);
+        this.latestVersion = curCompiler.latestRelease;
+
+        return curCompiler;
     }
 
     setVersion() { }

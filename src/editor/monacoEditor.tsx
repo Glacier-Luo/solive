@@ -10,6 +10,7 @@ import {
   registerListeners,
 } from './mountFunctions';
 import TopBar from './components/topBar';
+import CodeParser from './codeParser';
 
 interface Props {
   modelInfos: ModelInfoType[]
@@ -23,13 +24,19 @@ function App({
   const monacoRef = useRef<Monaco>();
   const editorApiRef = useRef<EditorApi>({} as EditorApi);
 
-  function handleEditorDidMount(editor: BaseMonacoEditor, monaco: Monaco) {
+  async function handleEditorDidMount(editor: BaseMonacoEditor, monaco: Monaco) {
     editorRef.current = editor;
     actions.updateMonaco(monaco);
     actions.updateEditor(editor);
+    actions.updateCodeParserLoading(true);
 
     initTheme(monaco);
     initModels(monaco, editor, modelInfos, dispatch);
+
+    const codeParser = new CodeParser(editorApiRef.current, stateRef.current);
+    await codeParser.parseVersion.init();
+    actions.setCodeParser(codeParser);
+    actions.updateCodeParserLoading(false);
 
     registerCommandsAndActions(monaco, editor);
     registerListeners(editor, editorApiRef.current, stateRef.current);

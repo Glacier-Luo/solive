@@ -1,13 +1,12 @@
 import { browserSolidityCompiler } from './browser.solidity.worker'
-import { CompilerInput } from './types';
 
-const worker = new Worker(URL.createObjectURL(new Blob([`(${browserSolidityCompiler})()`], { type: 'module' })));
 
 export const solidityCompiler = async ({
     version,
     input
-}: { version: string; input: any}
+}: { version: string; input: any }
 ) => {
+    const worker = new Worker(URL.createObjectURL(new Blob([`(${browserSolidityCompiler})()`], { type: 'module' })));
     return new Promise((resolve, reject) => {
         worker.postMessage({ input: JSON.stringify(input), version })
         worker.onmessage = function ({ data }) {
@@ -18,6 +17,7 @@ export const solidityCompiler = async ({
 }
 
 export const getCompilerVersions = async () => {
+    const worker = new Worker(URL.createObjectURL(new Blob([`(${browserSolidityCompiler})()`], { type: 'module' })));
     return new Promise((resolve, reject) => {
         worker.postMessage('fetch-compiler-versions')
         worker.onmessage = function ({ data }) {

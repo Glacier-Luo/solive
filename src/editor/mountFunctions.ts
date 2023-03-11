@@ -190,13 +190,12 @@ function registerListeners(
   editorApi: EditorApi,
   editorState: EditorInitState
 ) {
-  const codeParser = new CodeParser(editorApi, editorState);  
   editor.onDidChangeModelContent((e) => {
     console.log(editor.getModel()?.getValue())
     // console.log(codeParser.compilerService.compile({}, '0.5.9'));
 
     setTimeout(() => {
-      codeParser.compilerService.compile('0.5.9')
+      editorState.codeParser.compilerService.compile()
     });
   });
 
