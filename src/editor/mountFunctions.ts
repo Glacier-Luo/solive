@@ -1,7 +1,8 @@
 import { Monaco } from '@monaco-editor/react';
 import { IPosition } from 'monaco-editor';
+import * as helper from '../libs/compiler/helper';
+import { ErrorMarker } from '../libs/compiler/types';
 import { BaseMonacoEditor, EditorApi, ModelInfoType, ModelType, SupportLanguage } from '../types/monaco';
-import CodeParser from './codeParser';
 import { EditorInitState } from './editorContext';
 import { DefinitionProvider } from './providers/definition/provider';
 import { solidityLanguageConfig, solidityTokensProvider } from './syntaxes/solidity';
@@ -186,22 +187,73 @@ function registerFileImports(monaco: Monaco, state: any) {
 }
 
 function registerListeners(
-  editor: BaseMonacoEditor, 
+  editor: BaseMonacoEditor,
   editorApi: EditorApi,
   editorState: EditorInitState
 ) {
-  editor.onDidChangeModelContent((e) => {
-    console.log(editor.getModel()?.getValue())
-    // console.log(codeParser.compilerService.compile({}, '0.5.9'));
 
-    setTimeout(() => {
-      editorState.codeParser.compilerService.compile()
+  const transformCompileError = async (data: {output: any, input: any}) => {
+    const models = editorState?.models || [];
+    const modelIndex = editorState?.modelIndex || 0;
+    const curFile = models[modelIndex].filename;
+    const curFileContent = models[modelIndex].value;
+
+    const sources = data.input.sources || {}
+    const output = data.output || {};
+
+    let allErrors: ErrorMarker[] = [];
+
+    if (output.error || output.errors) {
+      if (output.error) {
+
+      } else {
+        for (let error of output.errors) {
+          if (!error.sourceLocation) {
+            const errorMarker = helper.createErrorMarker(error, curFile, { start: { line: 0, column: 0 }, end: { line: 0, column: 100 } })
+            allErrors = [...allErrors, errorMarker]
+          } else {
+            const lineBreaks = helper.getLinebreakPositions(sources[error.sourceLocation.file].content)
+            const lineColumn = helper.convertOffsetToLineColumn({
+              start: error.sourceLocation.start,
+              length: error.sourceLocation.end - error.sourceLocation.start
+            }, lineBreaks)
+
+
+            const filePath = error.sourceLocation.file;
+            
+            if (filePath !== curFile) {
+              const importFilePositions = await helper.getPositionForImportErrors(filePath, curFileContent);
+
+              for (const importFilePosition of importFilePositions) {
+                for (const line of importFilePosition.lines) {
+                  allErrors = [...allErrors, helper.createErrorMarker(error, curFile, line.position)]
+                }
+              }
+            } else {
+              allErrors = [...allErrors, helper.createErrorMarker(error, filePath, lineColumn)]
+            }
+          }
+        }
+      }
+      editorApi.addErrorMarker(allErrors); 
+    }
+  }
+
+  const registerListenErrorMarkers = () => {
+    editor.onDidChangeModelContent((e) => {
+      editorState.codeParser.compilerService
+        .compile()
+        .then((data: unknown) => transformCompileError(data as unknown as {output: any, input: any}))
     });
-  });
+  
+    editor.onDidChangeModel((e) => {
+      editorState.codeParser.compilerService
+        .compile()
+        .then((data: unknown) => transformCompileError(data as unknown as {output: any, input: any}))
+    });
+  }
 
-  editor.onDidChangeModel((e) => {
-    console.log(e);
-  });
+  registerListenErrorMarkers();
 }
 
 function addModels(
@@ -225,7 +277,6 @@ function addModels(
         monaco.Uri.file(modelInfo.filename)
       );
       monaco.editor.setModelLanguage(model, modelInfo.language);
-      // registerFileImports(monaco, modelInfo);
     } else if (overWriteExisting) {
       model.setValue(modelInfo.value);
     }

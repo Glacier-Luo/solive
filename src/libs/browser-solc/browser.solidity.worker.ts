@@ -27,9 +27,12 @@ function browserSolidityCompiler() {
                 const compile = soljson.cwrap('solidity_compile', 'string', ['string', 'number']);
                 const output = JSON.parse(compile(data.input))
                 // @ts-ignore    
-                postMessage(output)
+                postMessage({
+                    output,
+                    input: data.input && JSON.parse(data.input)
+                })
             }
-        }
+        }   
     });
 }
 

@@ -35,7 +35,7 @@ function getCache<T>(key: string): CacheReturn<T> {
     }
 
     return {
-        value: value.value,
+        value: value?.value,
         expired: value ? value.expired_time < new Date().getTime() : true
     };
 }

@@ -1,4 +1,3 @@
-import { MarkerSeverity } from "monaco-editor"
 
 export interface CompilerInput {
     // Required: Source code language. Currently supported are "Solidity" and "Yul".
@@ -532,4 +531,32 @@ export interface BytecodeObject {
         }
     },
     file: string
+}
+
+export enum MarkerSeverity {
+  Hint = 1,
+  Info = 2,
+  Warning = 4,
+  Error = 8
+}
+
+interface position {
+  start: {
+      line: number
+      column: number
+  },
+  end: {
+      line: number
+      column: number
+  }
+}
+
+export interface SearchResultLineLine {
+  left: any,
+  center: any,
+  right: any,
+  position: position
+}
+export interface SearchResultLine {
+  lines: SearchResultLineLine[]
 }

@@ -27,7 +27,11 @@ class CodeParserCompiler {
     compile() {
         const currentModel = this.editorState.models![this.editorState.modelIndex!];
 
-        const codeVersion = this.parseVersion.resolveCodeVersion(currentModel.model.getValue());
+        let codeVersion = this.parseVersion.latestVersion;
+
+        try {
+            codeVersion = this.parseVersion.resolveCodeVersion(currentModel.model.getValue());
+        } catch (error) {}
         const versionUrl = this.parseVersion.getVersionUri(codeVersion);
         const imports = this.resolveImports(currentModel);
         const sources = Object.assign({
@@ -43,7 +47,7 @@ class CodeParserCompiler {
             language: 'Solidity' as Language,
         })
 
-        // TODO: 考虑部分采用WebAssembly
+        // TODO: Consider partial adoption WebAssembly
         return solidityCompiler({
             version: `https://binaries.soliditylang.org/bin/${versionUrl}`,
             input: compilerConfig,
@@ -79,9 +83,11 @@ class CodeParserCompiler {
 
         let sources = {};
         imports.forEach((im: string) => {
-            Object.assign(sources, {
-                [im]: { content: find(im).getValue() }
-            })
+            if (find(im)) {
+                Object.assign(sources, {
+                    [im]: { content: find(im).getValue() }
+                })
+            }
         })
 
         return sources;

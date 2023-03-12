@@ -16,12 +16,13 @@ export type EditorProps = {
 };
 
 export default function Editor({
-  modelInfos
+  modelInfos,
+  id
 }: EditorProps) {
   return (
     <DndProvider backend={HTML5Backend}>
       <EditorProvider>
-        <MonacoEditor modelInfos={modelInfos} />
+        <MonacoEditor modelInfos={modelInfos} id={id} />
       </EditorProvider>
     </DndProvider>
   );

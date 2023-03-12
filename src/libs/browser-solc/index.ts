@@ -1,12 +1,12 @@
 import { browserSolidityCompiler } from './browser.solidity.worker'
-
+import setupMethods from 'solc/wrapper';
 
 export const solidityCompiler = async ({
     version,
     input
 }: { version: string; input: any }
 ) => {
-    const worker = new Worker(URL.createObjectURL(new Blob([`(${browserSolidityCompiler})()`], { type: 'module' })));
+    const worker = new Worker(URL.createObjectURL(new Blob([`(${browserSolidityCompiler})(${setupMethods})`], { type: 'module' })));
     return new Promise((resolve, reject) => {
         worker.postMessage({ input: JSON.stringify(input), version })
         worker.onmessage = function ({ data }) {

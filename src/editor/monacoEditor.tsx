@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useEditor } from "./editorContext";
+import BaseMonaco from 'monaco-editor';
 import ReactBaseMonacoEditor, { Monaco } from "@monaco-editor/react";
 import { BaseMonacoEditor, EditorApi, ModelInfoType } from '../types/monaco';
 import {
@@ -11,13 +12,17 @@ import {
 } from './mountFunctions';
 import TopBar from './components/topBar';
 import CodeParser from './codeParser';
+import { ErrorMarker, MarkerSeverity } from '../libs/compiler/types';
+import { findModel } from './utils/model';
 
 interface Props {
-  modelInfos: ModelInfoType[]
+  modelInfos: ModelInfoType[];
+  id: string;
 }
 
 function App({
-  modelInfos
+  modelInfos,
+  id
 }: Props) {
   const { stateRef, dispatch, actions } = useEditor();
   const editorRef = useRef<BaseMonacoEditor>();
@@ -48,7 +53,41 @@ function App({
   }
 
   useEffect(() => {
-    editorApiRef.current.addErrorMarker = () => {}
+    editorApiRef.current.addErrorMarker = (errors: ErrorMarker[], from = id) => {
+      const allMarkersPerfile: Record<string, Array<BaseMonaco.editor.IMarkerData>> = {}
+
+      for (const error of errors) {
+        let filePath = error.file
+
+        if (!filePath) return
+        const model = findModel(stateRef.current.models || [], filePath);
+        const errorServerityMap = {
+          'error': MarkerSeverity.Error,
+          'warning': MarkerSeverity.Warning,
+          'info': MarkerSeverity.Info
+        }
+        if (model) {
+          const markerData: BaseMonaco.editor.IMarkerData = {
+            severity: (typeof error.severity === 'string') ? errorServerityMap[error.severity] : error.severity,
+            startLineNumber: ((error.position.start && error.position.start.line) || 0),
+            startColumn: ((error.position.start && error.position.start.column) || 0),
+            endLineNumber: ((error.position.end && error.position.end.line) || 0),
+            endColumn: ((error.position.end && error.position.end.column) || 0),
+            message: error.message,
+          }
+          if (!allMarkersPerfile[filePath]) {
+            allMarkersPerfile[filePath] = []
+          }
+          allMarkersPerfile[filePath].push(markerData)
+        }
+      }
+      for (const filePath in allMarkersPerfile) {
+        const model = findModel(stateRef.current.models || [], filePath);
+        if (model) {
+          monacoRef.current?.editor.setModelMarkers(model.model, from, allMarkersPerfile[filePath])
+        }
+      }
+    }
   }, [])
 
   return (

@@ -31,6 +31,7 @@ MultiFile.args = {
 export const MultiLanguage = Template.bind({});
 
 MultiLanguage.args = {
+  id: '1',
   modelInfos: [
     {
       filename: 'a.sol',

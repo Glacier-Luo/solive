@@ -23,7 +23,7 @@ class ParserVersion {
     }
 
     async init() {
-        // TODO: 考虑加载失败的问题
+        // TODO: Consider the problem of loading failure
         await this.getCompilerInfo();
     }
 
@@ -42,13 +42,14 @@ class ParserVersion {
     }
 
     matchVersion(version: string) {
-        const latestVersion = semver.maxSatisfying(this.allVersions, version);
+        const bestVersion = semver.maxSatisfying(this.allVersions, version);
 
-        if (!latestVersion) {
-            throw new Error("No suitable version was found.");
+        if (!bestVersion) {
+            console.warn('No version match, use latest version');
+            return this.latestVersion; // This is the latest version
         }
 
-        return latestVersion;
+        return bestVersion;
     }
 
     async getCompilerInfo() {

@@ -1,4 +1,5 @@
 import BaseMonaco, { editor } from 'monaco-editor';
+import { ErrorMarker } from '../libs/compiler/types';
 
 export type BaseMonacoEditor = BaseMonaco.editor.IStandaloneCodeEditor
 
@@ -42,5 +43,5 @@ export class ModelInfoType {
 
 
 export interface EditorApi {
-    addErrorMarker: () => void;
+    addErrorMarker: (errors: ErrorMarker[], from?: string) => void;
 }
